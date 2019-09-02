@@ -5,13 +5,14 @@ const bodyParser = require("body-parser");
 
 function generateRandomString() {
   const vals =
-    "abcdefghijklmnopqrstuvwxyz  ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
-  const valArr = vals.split();
+    "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,1,2,3,4,5,6,7,8,9";
+  const valArr = vals.split(",");
   let final = "";
   for (let i = 0; i < 6; i++) {
     let rand = Math.floor(Math.random() * valArr.length - 1);
-    final += valArr[rand];
+    final += toString(vals[rand]);
   }
+  return final;
 }
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -28,8 +29,15 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  let short = generateRandomString();
+  urlDatabase[short] = req.body.longURL;
   console.log(req.body);
-  res.send("Ok");
+  res.redirect("/urls/:shortURL");
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 app.get("/urls", (req, res) => {
