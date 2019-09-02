@@ -1,6 +1,20 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const bodyParser = require("body-parser");
+
+function generateRandomString() {
+  const vals =
+    "abcdefghijklmnopqrstuvwxyz  ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+  const valArr = vals.split();
+  let final = "";
+  for (let i = 0; i < 6; i++) {
+    let rand = Math.floor(Math.random() * valArr.length - 1);
+    final += valArr[rand];
+  }
+}
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs");
 
@@ -8,6 +22,15 @@ const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);
+  res.send("Ok");
+});
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
