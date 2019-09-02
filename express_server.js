@@ -10,7 +10,7 @@ function generateRandomString() {
   let final = "";
   for (let i = 0; i < 6; i++) {
     let rand = Math.floor(Math.random() * valArr.length - 1);
-    final += toString(vals[rand]);
+    final += valArr[rand];
   }
   return final;
 }
@@ -32,11 +32,14 @@ app.post("/urls", (req, res) => {
   let short = generateRandomString();
   urlDatabase[short] = req.body.longURL;
   console.log(req.body);
-  res.redirect("/urls/:shortURL");
+  res.redirect(`/urls/${short}`);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  let longURL = urlDatabase[req.params.shortURL];
+  if (longURL !== `http://${longURL}`) {
+    longURL = `http://${urlDatabase[req.params.shortURL]}`;
+  }
   res.redirect(longURL);
 });
 
