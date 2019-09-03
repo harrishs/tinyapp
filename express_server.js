@@ -15,6 +15,12 @@ function generateRandomString() {
   return final;
 }
 
+function idCheck(id, database) {
+  if (id === database) {
+    return false;
+  }
+}
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs");
@@ -29,15 +35,27 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  let bool = false;
   let short = generateRandomString();
+  while (bool === false) {
+    let short = generateRandomString();
+    for (item in urlDatabase) {
+      bool = idCheck(short, item);
+    }
+  }
   urlDatabase[short] = req.body.longURL;
   console.log(req.body);
   res.redirect(`/urls/${short}`);
 });
 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL];
-  if (longURL !== `http://${longURL}`) {
+  if (longURL.split(4) !== "http") {
     longURL = `http://${urlDatabase[req.params.shortURL]}`;
   }
   res.redirect(longURL);
