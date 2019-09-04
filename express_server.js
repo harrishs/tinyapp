@@ -2,6 +2,12 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const users = {
+  admin: { id: "admin", email: "admin@gmail.com", password: "admin" }
+};
+let templateVars = { user: users[0] };
+var cookieParser = require("cookie-parser");
+app.use(cookieParser());
 
 function generateRandomString() {
   const vals =
@@ -16,9 +22,12 @@ function generateRandomString() {
 }
 
 function idCheck(id, database) {
-  if (id === database) {
-    return false;
+  for (let item in database) {
+    if (item === id) {
+      return false;
+    }
   }
+  return true;
 }
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -30,34 +39,107 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+//email lookup
+function lookUp(email, users, key) {
+  let keys = Object.keys(users);
+  if (key === "") {
+    for (let i of keys) {
+      if (email === users[i].email) {
+        return i;
+      }
+    }
+  }
+  for (let i of keys) {
+    if (email === users[i][key]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+//Create new url page
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
 app.post("/urls", (req, res) => {
-  let bool = false;
   let short = generateRandomString();
+  let bool = idCheck(short, urlDatabase);
   while (bool === false) {
-    let short = generateRandomString();
-    for (item in urlDatabase) {
-      bool = idCheck(short, item);
-    }
+    short = generateRandomString();
+    bool = idCheck(short, urlDatabase);
   }
   urlDatabase[short] = req.body.longURL;
   console.log(req.body);
   res.redirect(`/urls/${short}`);
 });
 
+//Registration page
+app.get("/register", (req, res) => {
+  res.render("urls_register", templateVars);
+});
+
+app.post("/register", (req, res) => {
+  let userID = generateRandomString();
+  let bool = idCheck(userID, users);
+  let email = req.body.email;
+  let pass = req.body.password;
+  if (!email) {
+    res.status(400).send("No email entered");
+  } else if (!pass) {
+    res.status(400).send("No password entered");
+  }
+  let emailCheck = lookUp(email, users, "email");
+  if (emailCheck === true) {
+    res.status(400).send("Email already exists");
+  }
+  while (bool === false) {
+    userID = generateRandomString();
+    bool = idCheck(userID, users);
+  }
+  users[userID] = { id: userID, email: email, password: pass };
+  res.cookie("user_id", userID);
+  res.redirect("/urls");
+});
+
+//login page
+app.get("/login", (req, res) => {
+  res.render("login", templateVars);
+});
+
+app.post("/login", (req, res) => {
+  let emailCheck = lookUp(req.body.email, users, "email");
+  if (emailCheck === false) {
+    res.status(403).send("Cannot find email");
+  } else {
+    if (
+      lookUp(req.body.password, users, "password") &&
+      lookUp(req.body.email, users, "email")
+    ) {
+      let id = lookUp(req.body.email, users, "");
+      res.cookie("user_id", id);
+      res.redirect("/urls");
+    }
+  }
+  res.status(403).send("Incorrect Password");
+});
+
+//logout
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id");
+  res.redirect("/urls");
+});
+
+//delete url
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
+//edit url
 app.post("/urls/:shortURL", (req, res) => {
   let short = req.params.shortURL;
-  console.log(short);
   urlDatabase[short] = req.body.longURL;
-  console.log(urlDatabase);
   res.redirect("/urls");
 });
 
@@ -70,12 +152,15 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let userObj = users[req.cookies["user_id"]];
+  templateVars = { user: userObj, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = {
+  let userObj = users[req.cookies["user_id"]];
+  templateVars = {
+    user: userObj,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL]
   };
