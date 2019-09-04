@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
 const users = {
   admin: { id: "admin", email: "admin@gmail.com", password: "admin" }
 };
@@ -100,10 +101,11 @@ app.post("/register", (req, res) => {
   let userID = generateRandomString();
   let bool = idCheck(userID, users);
   let email = req.body.email;
-  let pass = req.body.password;
+  let pass = bcrypt.hashSync(req.body.password, 10);
   if (!email) {
     res.status(400).send("No email entered");
-  } else if (!pass) {
+  }
+  if (!pass) {
     res.status(400).send("No password entered");
   }
   let emailCheck = lookUp(email, users, "email");
@@ -128,17 +130,19 @@ app.post("/login", (req, res) => {
   let emailCheck = lookUp(req.body.email, users, "email");
   if (emailCheck === false) {
     res.status(403).send("Cannot find email");
+  } else if (
+    users[lookUp(req.body.email, users, "")].email == req.body.email &&
+    bcrypt.compareSync(
+      req.body.password,
+      users[lookUp(req.body.email, users, "")].password
+    )
+  ) {
+    let id = lookUp(req.body.email, users, "");
+    res.cookie("user_id", id);
+    res.redirect("/urls");
   } else {
-    if (
-      lookUp(req.body.password, users, "password") &&
-      lookUp(req.body.email, users, "email")
-    ) {
-      let id = lookUp(req.body.email, users, "");
-      res.cookie("user_id", id);
-      res.redirect("/urls");
-    }
+    res.status(403).send("Incorrect Password");
   }
-  res.status(403).send("Incorrect Password");
 });
 
 //logout
@@ -171,7 +175,7 @@ app.post("/urls/:shortURL", (req, res) => {
 //redirecting to url
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].longURL;
-  let part = longURL.split(0, 5).join;
+  // let part = longURL.split(0, 5).join;
   // if (part !== "http") {
   //   longURL = `http://${urlDatabase[req.params.shortURL].longURL}`;
   // }
