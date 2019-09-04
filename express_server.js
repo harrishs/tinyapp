@@ -9,6 +9,7 @@ let templateVars = { user: users[0] };
 var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
+//function to generate random 6 char string
 function generateRandomString() {
   const vals =
     "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,1,2,3,4,5,6,7,8,9";
@@ -21,6 +22,7 @@ function generateRandomString() {
   return final;
 }
 
+//function to check if id is unique
 function idCheck(id, database) {
   for (let item in database) {
     if (item === id) {
@@ -34,9 +36,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs");
 
-const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+//url database
+let urlDatabase = {
+  b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "admin" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "admin" }
 };
 
 //email lookup
@@ -57,11 +60,27 @@ function lookUp(email, users, key) {
   return false;
 }
 
+//function to filter urls by id
+function urlsForUser(id) {
+  let keys = Object.keys(urlDatabase);
+  let urls = {};
+  for (let i of keys) {
+    if (urlDatabase[i].userID === id) {
+      urls[i] = urlDatabase[i];
+    }
+  }
+  return urls;
+}
 //Create new url page
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  if (!req.cookies.user_id) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_new");
+  }
 });
 
+//post method for main page
 app.post("/urls", (req, res) => {
   let short = generateRandomString();
   let bool = idCheck(short, urlDatabase);
@@ -151,9 +170,16 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+// main page
 app.get("/urls", (req, res) => {
   let userObj = users[req.cookies["user_id"]];
-  templateVars = { user: userObj, urls: urlDatabase };
+  let url;
+  if (req.cookies["user_id"]) {
+    url = urlsForUser(req.cookies["user_id"]);
+  } else {
+    url = urlsForUser("");
+  }
+  templateVars = { user: userObj, urls: url };
   res.render("urls_index", templateVars);
 });
 
@@ -162,7 +188,7 @@ app.get("/urls/:shortURL", (req, res) => {
   templateVars = {
     user: userObj,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]
+    longURL: urlDatabase[req.params.shortURL].longURL
   };
   res.render("urls_show", templateVars);
 });
