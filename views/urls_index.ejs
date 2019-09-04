@@ -19,6 +19,9 @@
   <header><% include ./partials/_header %></header>
   <body>
     <main style="margin: 1em;">
+      <% if (!user) { %>
+      <h3 style="color: red">Please login or register</h3>
+      <% } else {%>
       <h3>My URLs</h3>
       <table class="table">
         <thead>
@@ -45,7 +48,7 @@
               </form>
             </td>
           </tr>
-          <% } %>
+          <% }} %>
         </tbody>
       </table>
     </main>

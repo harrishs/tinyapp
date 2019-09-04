@@ -37,7 +37,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 //url database
-let urlDatabase = {
+const urlDatabase = {
   b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "admin" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "admin" }
 };
@@ -176,8 +176,6 @@ app.get("/urls", (req, res) => {
   let url;
   if (req.cookies["user_id"]) {
     url = urlsForUser(req.cookies["user_id"]);
-  } else {
-    url = urlsForUser("");
   }
   templateVars = { user: userObj, urls: url };
   res.render("urls_index", templateVars);
