@@ -32,3 +32,12 @@ describe("lookUp", function() {
     assert.strictEqual(user, expectedOutput);
   });
 });
+
+describe("lookUp", function() {
+  it("should return false if a user with given address does not exist", function() {
+    const user = lookUp("user345@example.com", testUsers, "email");
+    const expectedOutput = false;
+    // Write your assert statement here
+    assert.strictEqual(user, expectedOutput);
+  });
+});
