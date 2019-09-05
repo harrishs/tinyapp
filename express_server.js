@@ -40,6 +40,11 @@ function generateRandomString() {
   let final = "";
   for (let i = 0; i < 6; i++) {
     let rand = Math.floor(Math.random() * valArr.length - 1);
+    if (!valArr[rand]) {
+      while (!valArr[rand]) {
+        rand = Math.floor(Math.random() * valArr.length - 1);
+      }
+    }
     final += valArr[rand];
   }
   return final;
@@ -80,25 +85,6 @@ app.post("/urls", (req, res) => {
   urlDatabase[short].userID = req.session.user_id;
   res.redirect(`/urls/${short}`);
 });
-
-// //email lookup
-// function lookUp(email, users, key) {
-//   let keys = Object.keys(users);
-//   if (key === "") {
-//     for (let i of keys) {
-//       if (email === users[i].email) {
-//         return i;
-//       }
-//     }
-//   } else {
-//     for (let i of keys) {
-//       if (email === users[i][key]) {
-//         return true;
-//       }
-//     }
-//     return false;
-//   }
-// }
 
 //Registration page
 app.get("/register", (req, res) => {
@@ -172,11 +158,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //edit url
 app.post("/urls/:shortURL", (req, res) => {
   let short = req.params.shortURL;
-  if (req.session.user_id !== urlDatabase[short].userID) {
-    res.redirect("/urls");
+  if (!short) {
+    res.status(404).send("Link does not exist");
   } else {
-    urlDatabase[short].longURL = req.body.longURL;
-    res.redirect("/urls");
+    if (req.session.user_id !== urlDatabase[short].userID) {
+      res.redirect("/urls");
+    } else {
+      urlDatabase[short].longURL = req.body.longURL;
+      res.redirect("/urls");
+    }
   }
 });
 
@@ -187,10 +177,13 @@ app.get("/u/:shortURL", (req, res) => {
   if (longURL.slice(0, 4) !== "http") {
     longURL = "http://" + urlDatabase[short].longURL;
   }
+  if (!longURL) {
+    res.status(404);
+  }
   res.redirect(longURL);
 });
 
-// main page
+// Create main page
 app.get("/urls", (req, res) => {
   let userObj = users[req.session.user_id];
   let url;
@@ -201,17 +194,29 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// Create page showing short url
 app.get("/urls/:shortURL", (req, res) => {
   let userObj = users[req.session.user_id];
-  templateVars = {
-    user: userObj,
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    userID: urlDatabase[req.params.shortURL].userID
-  };
+  let short = req.params.shortURL;
+  if (!urlDatabase[short]) {
+    templateVars = {
+      user: userObj,
+      shortURL: "",
+      longURL: "",
+      userID: ""
+    };
+  } else {
+    templateVars = {
+      user: userObj,
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      userID: urlDatabase[req.params.shortURL].userID
+    };
+  }
   res.render("urls_show", templateVars);
 });
 
+//Usually don't need to change
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });

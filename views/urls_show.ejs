@@ -13,6 +13,8 @@
   <body>
     <% if (!user) { %>
     <h3 style="color: red">Please login before trying to access url</h3>
+    <% } else if (!longURL){ %>
+    <h3 style="color: red">This url does not exist</h3>
     <% } else if (user.id !== userID){ %>
     <h3 style="color: red">This shortened url does not belong to you</h3>
     <% } else {%>
