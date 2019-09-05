@@ -5,6 +5,8 @@ module.exports = function lookUp(email, users, key) {
     for (let i of keys) {
       if (email === users[i].email) {
         return i;
+      } else {
+        return false;
       }
     }
   } else {
