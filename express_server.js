@@ -8,6 +8,7 @@ const users = {
 };
 let templateVars = { user: users[0] };
 var cookieSession = require("cookie-session");
+let lookUp = require("./helper");
 app.use(
   cookieSession({
     name: "user_id",
@@ -80,23 +81,24 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${short}`);
 });
 
-//email lookup
-function lookUp(email, users, key) {
-  let keys = Object.keys(users);
-  if (key === "") {
-    for (let i of keys) {
-      if (email === users[i].email) {
-        return i;
-      }
-    }
-  }
-  for (let i of keys) {
-    if (email === users[i][key]) {
-      return true;
-    }
-  }
-  return false;
-}
+// //email lookup
+// function lookUp(email, users, key) {
+//   let keys = Object.keys(users);
+//   if (key === "") {
+//     for (let i of keys) {
+//       if (email === users[i].email) {
+//         return i;
+//       }
+//     }
+//   } else {
+//     for (let i of keys) {
+//       if (email === users[i][key]) {
+//         return true;
+//       }
+//     }
+//     return false;
+//   }
+// }
 
 //Registration page
 app.get("/register", (req, res) => {
@@ -182,6 +184,9 @@ app.post("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let short = req.params.shortURL;
   let longURL = urlDatabase[short].longURL;
+  if (longURL.slice(0, 4) !== "http") {
+    longURL = "http://" + urlDatabase[short].longURL;
+  }
   res.redirect(longURL);
 });
 
@@ -208,7 +213,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
